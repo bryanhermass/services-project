@@ -1,0 +1,36 @@
+version: '3'
+services:
+  umami-staging:
+    image: ghcr.io/umami-software/umami:postgresql-v2.13.2
+    hostname: umami-staging
+    ports:
+      - "3002:3000"
+    environment:
+      DATABASE_URL: postgresql://user:password@db-umami.bhernandez.org:5432/umami-staging
+      DATABASE_TYPE: postgresql
+      APP_SECRET: replace-me-with-a-random-string
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl http://localhost:3000/api/heartbeat"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    labels:
+      # Router para manejar tanto www.umami.bhernandez.org 
+      - "traefik.enable=true"
+      - "traefik.http.routers.umami-staging.rule=Host(`umami-staging.bhernandez.org`)"
+      - "traefik.http.routers.umami-staging.entrypoints=websecure"
+      - "traefik.http.routers.umami-staging.tls=true"
+      - "traefik.http.routers.umami-staging.tls.certresolver=myresolver"
+
+      - "traefik.http.services.umami-staging.loadbalancer.server.port=3000"
+
+      # Middleware para whitelist de IP
+      - "traefik.http.middlewares.ip-whitelist.ipwhitelist.sourcerange=190.114.37.58/32"
+      - "traefik.http.routers.umami-staging.middlewares=ip-whitelist,redirect-to-www"
+    networks:
+      - traefik-net
+
+networks:
+  traefik-net:
+    external: true
