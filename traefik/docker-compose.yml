@@ -31,4 +31,4 @@ services:
 
 networks:
   traefik-net:
-    external: true
+    external: true # used the network created after jenkins-docker is started manually
