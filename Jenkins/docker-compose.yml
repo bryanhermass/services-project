@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  jenkins-docker:
+    image: docker:dind
+    container_name: jenkins-docker
+    privileged: true
+    networks:
+      jenkins:
+        aliases:
+          - docker
+    environment:
+      - DOCKER_TLS_CERTDIR=
+    volumes:
+      - jenkins-data:/var/jenkins_home
+    ports:
+      - "2375:2375"
+    command: --tls=false
+    restart: unless-stopped
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    privileged: true
+    networks:
+      - jenkins
+    environment:
+      - DOCKER_HOST=tcp://docker:2375
+      - DOCKER_CERT_PATH=/certs/client
+      - DOCKER_TLS_VERIFY=0
+    volumes:
+      - jenkins-data:/var/jenkins_home
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    restart: unless-stopped
+
+networks:
+  jenkins: 
+    external: true # used the network created after jenkins-docker is started manually
+
+volumes:
+  jenkins-data:
